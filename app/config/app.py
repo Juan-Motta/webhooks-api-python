@@ -1,0 +1,22 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Database webhooks
+DB_WEBHOOKS_HOST = os.getenv('DB_WEBHOOKS_HOST')
+DB_WEBHOOKS_NAME = os.getenv('DB_WEBHOOKS_NAME')
+DB_WEBHOOKS_USER =  os.getenv('DB_WEBHOOKS_USER')
+DB_WEBHOOKS_PASSWORD = os.getenv('DB_WEBHOOKS_PASSWORD')
+
+# Database services
+DB_SERVICES_HOST = os.getenv('DB_SERVICES_HOST')
+DB_SERVICES_NAME = os.getenv('DB_SERVICES_NAME')
+DB_SERVICES_USER =  os.getenv('DB_SERVICES_USER')
+DB_SERVICES_PASSWORD = os.getenv('DB_SERVICES_PASSWORD')
+
+# Rabbit
+RABBIT_HOST = os.getenv('RABBIT_HOST')
+RABBIT_USER = os.getenv('RABBIT_USER')
+RABBIT_PASSWORD = os.getenv('RABBIT_PASSWORD')
+RABBIT_NOTIFICATION_QUEUE = os.getenv('RABBIT_NOTIFICATION_QUEUE')
