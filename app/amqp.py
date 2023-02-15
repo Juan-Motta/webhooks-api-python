@@ -22,6 +22,8 @@ class CustomRobustConnection(RobustConnection):
             closing: internal object of RobustConnection
         """
         await super()._on_connection_close(closing)
+        # self.transport is a way to identify is the connection with broker has lost because
+        # when connection start this method is evaluated and it generates a false-positive alert
         if self.transport is None:
             print(f"""[x] RabbitMQ connection list, retry in {RABBIT["reconnection_time"]}""")
 
