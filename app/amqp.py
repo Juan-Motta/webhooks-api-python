@@ -11,7 +11,7 @@ class CustomRobustConnection(RobustConnection):
     Override RobustConnection class from aio-pika
     """
     KWARGS_TYPES = (
-        ("reconnect_interval", parse_timeout, RABBIT["recconection_time"]),
+        ("reconnect_interval", parse_timeout, RABBIT["reconnection_time"]),
         ("fail_fast", parse_bool, "1"),
     )
     
@@ -23,7 +23,7 @@ class CustomRobustConnection(RobustConnection):
         """
         await super()._on_connection_close(closing)
         if self.transport is None:
-            print(f"""[x] RabbitMQ connection list, retry in {RABBIT["recconection_time"]}""")
+            print(f"""[x] RabbitMQ connection list, retry in {RABBIT["reconnection_time"]}""")
 
 
 async def start_amqp_listener(app) -> None:

@@ -35,7 +35,7 @@ RABBIT = {
     "password": os.getenv("RABBIT_PASSWORD"),
     "port": int(os.getenv("RABBIT_PORT")),
     "notification_queue": os.getenv("RABBIT_NOTIFICATION_QUEUE"),
-    "recconection_time": os.getenv("RABBIT_RECCONECTION_TIME")
+    "reconnection_time": os.getenv("RABBIT_RECONNECTION_TIME")
 }
 
 # Discord
