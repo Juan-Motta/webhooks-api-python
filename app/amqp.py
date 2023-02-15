@@ -38,7 +38,6 @@ async def start_amqp_listener(app) -> None:
         f"""amqp://{RABBIT["user"]}:{RABBIT["password"]}@{RABBIT["host"]}:{RABBIT["port"]}/""",
         client_properties={"connection_name": "webhooks"},
         connection_class=CustomRobustConnection,
-        reconnect_interval=15
     )
     async with connection:
         print("[x] RabbitMQ connected ... OK")
