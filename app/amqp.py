@@ -1,18 +1,30 @@
 import asyncio
-from aio_pika import (
-    Channel,
-    connect_robust, 
-    Connection,
-    exceptions,
-    Message,
-    Queue
-)
-from .config.app import (
-    RABBIT_HOST,
-    RABBIT_USER,
-    RABBIT_PASSWORD,
-    RABBIT_NOTIFICATION_QUEUE
-)
+from aio_pika import connect_robust, RobustConnection
+from aio_pika.abc import AbstractChannel, AbstractQueue
+from aiormq.connection import parse_bool, parse_timeout
+
+from .config.app import RABBIT
+
+
+class CustomRobustConnection(RobustConnection):
+    """
+    Override RobustConnection class from aio-pika
+    """
+    KWARGS_TYPES = (
+        ("reconnect_interval", parse_timeout, RABBIT["recconection_time"]),
+        ("fail_fast", parse_bool, "1"),
+    )
+    
+    async def _on_connection_close(self, closing: asyncio.Future) -> None:
+        """
+        Override methods that is called when the connection with RabbitMQ is closed or lost
+        Args:
+            closing: internal object of RobustConnection
+        """
+        await super()._on_connection_close(closing)
+        if self.transport is None:
+            print(f"""[x] RabbitMQ connection list, retry in {RABBIT["recconection_time"]}""")
+
 
 async def start_amqp_listener(app) -> None:
     """
@@ -22,45 +34,25 @@ async def start_amqp_listener(app) -> None:
     Args:
         app: fastapi instance
     """
-    connection: Connection = await connect()
-    app.state.rabbit = connection
-    channel: Channel = await connection.channel()
-    queue: Queue = await channel.declare_queue(
-        f"{RABBIT_NOTIFICATION_QUEUE}", 
-        durable=True
+    connection = await connect_robust(
+        f"""amqp://{RABBIT["user"]}:{RABBIT["password"]}@{RABBIT["host"]}:{RABBIT["port"]}/""",
+        client_properties={"connection_name": "webhooks"},
+        connection_class=CustomRobustConnection,
+        reconnect_interval=15
     )
-    
-    async def message_handler(message: Message) -> None:
-        async with message.process():
-            print(message.body)
+    async with connection:
+        print("[x] RabbitMQ connected ... OK")
+        app.state.rabbit = connection
+        queue_name: str = RABBIT["notification_queue"]
+        channel: AbstractChannel = await connection.channel()
+        queue: AbstractQueue = await channel.declare_queue(
+            queue_name,
+            durable=True
+        )
+        async with queue.iterator() as queue_iter:
+            async for message in queue_iter:
+                async with message.process():
+                    print(message.body)
 
-    await queue.consume(message_handler)
-
-async def connect() -> Connection:
-    """
-    Generates the RabbitMQ connection, if connection cannot be stablished, a new task is
-    queue to retry in X seconds 
-    """
-    while True:
-        try:
-            connection: Connection = await connect_robust(
-                f"amqp://{RABBIT_USER}:{RABBIT_PASSWORD}@{RABBIT_HOST}/"
-            )
-            print("[x] RabbitMQ connected ... OK")
-            return connection
-        except exceptions.AMQPConnectionError:
-            print("[x] Failed to connect to RabbitMQ, retrying...")
-            await asyncio.sleep(60)
-
-async def check_amqp_connection(app) -> None:
-    """
-    Validates every X seconds if rabbit connection is healthy, if not it tries every X seconds
-    to reconnect
-    Args:
-        app: fastapi instance
-    """
-    connection: Connection = app.state.rabbit
-    while True:
-        if connection is not None and connection.is_closed:
-            await connect()
-        await asyncio.sleep(60)
+                    if queue.name in message.body.decode():
+                        break
