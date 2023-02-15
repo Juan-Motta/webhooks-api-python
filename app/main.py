@@ -1,26 +1,35 @@
-import asyncio
 from fastapi import FastAPI
-from .amqp import (
-    start_amqp_listener,
-    check_amqp_connection
-)
-from .db import (
-    start_services_db_connection,
-    start_webhooks_db_connection,
-    check_services_connection,
-    check_webhooks_connection,
-)
+
+import asyncio
+
+from .amqp import start_amqp_listener
+from .config.app import WEBHOOKS_DB, SERVICES_DB
+from .db import Database
 
 app = FastAPI()
 
+webhook_db = Database(
+    host=WEBHOOKS_DB["host"],
+    name=WEBHOOKS_DB["name"],
+    user=WEBHOOKS_DB["user"],
+    password=WEBHOOKS_DB["password"],
+    port=WEBHOOKS_DB["port"],
+)
+service_db = Database(
+    host=SERVICES_DB["host"],
+    name=SERVICES_DB["name"],
+    user=SERVICES_DB["user"],
+    password=SERVICES_DB["password"],
+    port=SERVICES_DB["port"],
+)
+
 @app.on_event("startup")
 async def startup_event():
+    await service_db.connect()
+    app.state.service_db = service_db
+    await webhook_db.connect()
+    app.state.webhook_db = webhook_db
     await start_amqp_listener(app)
-    await start_services_db_connection(app)
-    await start_webhooks_db_connection(app)
-    asyncio.create_task(check_services_connection(app))
-    asyncio.create_task(check_webhooks_connection(app))
-    asyncio.create_task(check_amqp_connection(app))
 
 @app.on_event("shutdown")
 async def shutdown():
