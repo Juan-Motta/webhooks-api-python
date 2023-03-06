@@ -35,25 +35,20 @@ async def start_amqp_listener(app) -> None:
     receives
     Args:
         app: fastapi instance
-    """
+    """             
     connection = await connect_robust(
         f"""amqp://{RABBIT["user"]}:{RABBIT["password"]}@{RABBIT["host"]}:{RABBIT["port"]}/""",
         client_properties={"connection_name": "webhooks"},
         connection_class=CustomRobustConnection,
     )
-    async with connection:
-        print("[x] RabbitMQ connected ... OK")
-        app.state.rabbit = connection
-        queue_name: str = RABBIT["notification_queue"]
-        channel: AbstractChannel = await connection.channel()
-        queue: AbstractQueue = await channel.declare_queue(
-            queue_name,
-            durable=True
-        )
-        async with queue.iterator() as queue_iter:
-            async for message in queue_iter:
-                async with message.process():
-                    print(message.body)
-
-                    if queue.name in message.body.decode():
-                        break
+    channel = await connection.channel()
+    queue = await channel.declare_queue(
+        RABBIT["notification_queue"],
+        durable=True
+    )
+    print("[x] RabbitMQ connected ... OK")
+    async with queue.iterator() as queue_iter:
+        async for message in queue_iter:
+            async with message.process():
+                print(message.body)
+                # Handle the incoming message here
