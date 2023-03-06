@@ -8,20 +8,8 @@ from .db import Database
 
 app = FastAPI()
 
-webhook_db = Database(
-    host=WEBHOOKS_DB["host"],
-    name=WEBHOOKS_DB["name"],
-    user=WEBHOOKS_DB["user"],
-    password=WEBHOOKS_DB["password"],
-    port=WEBHOOKS_DB["port"],
-)
-service_db = Database(
-    host=SERVICES_DB["host"],
-    name=SERVICES_DB["name"],
-    user=SERVICES_DB["user"],
-    password=SERVICES_DB["password"],
-    port=SERVICES_DB["port"],
-)
+webhook_db = Database(**WEBHOOKS_DB)
+service_db = Database(**SERVICES_DB)
 
 @app.on_event("startup")
 async def startup_event():
@@ -29,12 +17,12 @@ async def startup_event():
     app.state.service_db = service_db
     await webhook_db.connect()
     app.state.webhook_db = webhook_db
-    await start_amqp_listener(app)
+    asyncio.create_task(start_amqp_listener(app))
 
 @app.on_event("shutdown")
 async def shutdown():
-    await app.state.webhooks_db.close()
-    await app.state.services_db.close()
+    await app.state.webhooks_db.disconnect()
+    await app.state.services_db.disconnect()
 
 @app.get("/")
 async def read_root():
