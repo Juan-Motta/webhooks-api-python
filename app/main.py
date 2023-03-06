@@ -12,7 +12,10 @@ webhook_db = Database(**WEBHOOKS_DB)
 service_db = Database(**SERVICES_DB)
 
 @app.on_event("startup")
-async def startup_event():
+async def startup_event() -> None:
+    """
+    Initialices databases and RabbitMQ listener when service starts
+    """
     await service_db.connect()
     app.state.service_db = service_db
     await webhook_db.connect()
@@ -20,7 +23,10 @@ async def startup_event():
     asyncio.create_task(start_amqp_listener(app))
 
 @app.on_event("shutdown")
-async def shutdown():
+async def shutdown() -> None:
+    """
+    Closes databases connections when services shuts down
+    """
     await app.state.webhooks_db.disconnect()
     await app.state.services_db.disconnect()
 
