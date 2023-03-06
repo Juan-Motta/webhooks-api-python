@@ -1,6 +1,6 @@
 import asyncio
 from aio_pika import connect_robust, RobustConnection
-from aio_pika.abc import AbstractChannel, AbstractQueue
+from aio_pika.abc import AbstractChannel, AbstractQueue, AbstractRobustConnection
 from aiormq.connection import parse_bool, parse_timeout
 
 from .config.app import RABBIT
@@ -36,13 +36,13 @@ async def start_amqp_listener(app) -> None:
     Args:
         app: fastapi instance
     """             
-    connection = await connect_robust(
+    connection: AbstractRobustConnection = await connect_robust(
         f"""amqp://{RABBIT["user"]}:{RABBIT["password"]}@{RABBIT["host"]}:{RABBIT["port"]}/""",
         client_properties={"connection_name": "webhooks"},
         connection_class=CustomRobustConnection,
     )
-    channel = await connection.channel()
-    queue = await channel.declare_queue(
+    channel: AbstractChannel = await connection.channel()
+    queue: AbstractQueue = await channel.declare_queue(
         RABBIT["notification_queue"],
         durable=True
     )
