@@ -36,9 +36,9 @@ async def read_root():
 
 @app.get("/items")
 async def read_items():
-    async with app.state.db.acquire() as connection:
-        rows = await connection.fetch("SELECT * FROM webhooks")
-        return rows
+    from app.repositories.services.services import get_service_by_id
+    data = await get_service_by_id(3191045)
+    return data
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
