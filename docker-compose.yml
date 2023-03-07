@@ -1,13 +1,15 @@
 version: "3.8"
 services:
-    app:
-        build: .
-        image: webhooks
-        container_name: webhooks
-        restart: always
-        volumes:
-            - "./:/app"
-        env_file:
-          - ./.env
-        tty: true
-        stdin_open: true
+  app:
+    build: .
+    image: webhooks
+    container_name: webhooks
+    restart: always
+    volumes:
+        - "./:/app"
+    env_file:
+      - ./.env
+    tty: true
+    stdin_open: true
+    ports:
+      - 3000:80
