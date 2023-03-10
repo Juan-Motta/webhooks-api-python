@@ -1,8 +1,8 @@
 from typing import Dict, List
 
-from app.main import app
+from ...app import app
 
-async def get_service_by_id(service_id: int) -> List[Dict]:
+async def get_service_by_id(service_id: int = None) -> List[Dict]:
     query: str = f"""
     SELECT
         s.id                                                                                                AS "id",
